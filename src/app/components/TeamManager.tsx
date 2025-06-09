@@ -1,17 +1,15 @@
 'use client'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useUser } from '../context/UserContext'
 import { 
   createTeam, 
   joinTeamWithLimit, 
   getUserTeams, 
-  leaveTeam, 
   getTeamMembers, 
   getAllTeams,
   getTeamRankings,
   getUserStepsInfo,
-  getTeamTodaySteps,
   Team,
   TeamMember
 } from '../lib/database_simple'
@@ -45,7 +43,7 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
   const [teamName, setTeamName] = useState('')
   const [teamDescription, setTeamDescription] = useState('')
 
-  const loadUserTeams = async () => {
+  const loadUserTeams = useCallback(async () => {
     if (!user) return
     
     try {
@@ -70,9 +68,9 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
     } finally {
       setInitialLoading(false)
     }
-  }
+  }, [user, selectedTeam])
 
-  const loadAvailableTeams = async () => {
+  const loadAvailableTeams = useCallback(async () => {
     setTeamsLoading(true)
     try {
       console.log('=== 가입 가능한 팀 목록 로드 시작 ===')
@@ -101,9 +99,9 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
     } finally {
       setTeamsLoading(false)
     }
-  }
+  }, [userTeams])
 
-  const loadTeamMembers = async () => {
+  const loadTeamMembers = useCallback(async () => {
     if (!selectedTeam) {
       console.log('선택된 팀이 없어서 멤버 로드 건너뜀')
       setTeamMembers([])
@@ -183,9 +181,9 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
       setTeamMembers([])
       setMemberStepsInfo({})
     }
-  }
+  }, [selectedTeam])
 
-  const loadTeamStats = async () => {
+  const loadTeamStats = useCallback(async () => {
     if (!selectedTeam) {
       setTeamStats({
         totalSteps: 0,
@@ -203,7 +201,7 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
       
       if (rankingsResult.success && rankingsResult.data) {
         const currentTeamRanking = rankingsResult.data.find(
-          (team: any) => team.name === selectedTeam.name
+          (team: { name: string; rank: number }) => team.name === selectedTeam.name
         )
         teamRank = currentTeamRanking?.rank || 0
       }
@@ -255,7 +253,7 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
         teamRank: 0
       })
     }
-  }
+  }, [selectedTeam, teamMembers, memberStepsInfo])
 
   const handleCreateTeam = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -318,40 +316,19 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
     }
   }
 
-  const handleLeaveTeam = async (teamCode: string) => {
-    if (!user || !confirm('정말로 팀을 탈퇴하시겠습니까?')) return
 
-    setLoading(true)
-    try {
-      const result = await leaveTeam(teamCode, user.google_id)
-      
-      if (result.success) {
-        await loadUserTeams()
-        setSelectedTeam(null)
-        onTeamChange?.()
-        alert('팀에서 탈퇴했습니다.')
-      } else {
-        alert(result.message || '팀 탈퇴에 실패했습니다.')
-      }
-    } catch (error) {
-      console.error('팀 탈퇴 실패:', error)
-      alert('팀 탈퇴 중 오류가 발생했습니다.')
-    } finally {
-      setLoading(false)
-    }
-  }
 
   useEffect(() => {
     if (isLoggedIn && user) {
       loadUserTeams()
     }
-  }, [isLoggedIn, user])
+  }, [isLoggedIn, user, loadUserTeams])
 
   useEffect(() => {
     if (userTeams.length > 0) {
       loadAvailableTeams()
     }
-  }, [userTeams])
+  }, [userTeams, loadAvailableTeams])
 
   useEffect(() => {
     console.log('=== selectedTeam 변경됨 ===');
@@ -366,14 +343,14 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
     }
     
     loadTeamMembers()
-  }, [selectedTeam])
+  }, [selectedTeam, loadTeamMembers])
 
   // 팀 멤버 정보가 로드된 후 팀 통계 계산
   useEffect(() => {
     if (selectedTeam && memberStepsInfo && Object.keys(memberStepsInfo).length > 0) {
       loadTeamStats()
     }
-  }, [selectedTeam, memberStepsInfo])
+  }, [selectedTeam, memberStepsInfo, loadTeamStats])
 
   if (!isLoggedIn) {
     return (

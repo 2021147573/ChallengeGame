@@ -1,7 +1,7 @@
 'use client'
 
-import { useState, useEffect } from 'react'
-import Image from "next/image"
+import { useState, useEffect, useCallback } from 'react'
+
 import { extractStepsFromImage, validateStepData, StepData } from './utils/ocr'
 import { saveStepRecord, getTeamRankings } from './lib/database_simple'
 import { logVisitor, trackPageView } from './utils/analytics'
@@ -311,7 +311,7 @@ function UploadView() {
             const parsed = JSON.parse(jsonMatch[1])
             
             if (parsed.success && parsed.data) {
-              const memberRecord = parsed.data.find((member: any) => member.google_id === user.google_id)
+              const memberRecord = parsed.data.find((member: { google_id: string }) => member.google_id === user.google_id)
               if (memberRecord && memberRecord.team_code) {
                 teamCode = memberRecord.team_code
               }
@@ -399,8 +399,8 @@ function UploadView() {
           className={`border-2 border-dashed rounded-lg p-12 text-center transition-colors ${
             dragActive ? 'border-indigo-400 bg-indigo-50' : 'border-gray-300'
           }`}
-          onDragEnter={(e) => setDragActive(true)}
-          onDragLeave={(e) => setDragActive(false)}
+          onDragEnter={() => setDragActive(true)}
+          onDragLeave={() => setDragActive(false)}
           onDragOver={(e) => e.preventDefault()}
           onDrop={handleDrop}
         >
@@ -561,12 +561,12 @@ function UploadView() {
 
 function RankingView() {
   const { user } = useUser()
-  const [teams, setTeams] = useState<any[]>([])
+  const [teams, setTeams] = useState<{ name: string; total_steps: number; member_count: number; rank: number }[]>([])
   const [isLoading, setIsLoading] = useState(true)
-  const [userTeams, setUserTeams] = useState<any[]>([])
+  const [userTeams, setUserTeams] = useState<{ team_code: string; name: string }[]>([])
 
   // 사용자의 팀 정보 가져오기
-  const loadUserTeams = async () => {
+  const loadUserTeams = useCallback(async () => {
     if (!user) return
     
     try {
@@ -577,7 +577,7 @@ function RankingView() {
     } catch (error) {
       console.error('사용자 팀 로드 오류:', error)
     }
-  }
+  }, [user])
 
   // 실시간 랭킹 불러오기
   const loadRankings = async () => {
@@ -612,7 +612,7 @@ function RankingView() {
   useEffect(() => {
     loadRankings()
     loadUserTeams()
-  }, [user])
+  }, [user, loadUserTeams])
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -672,7 +672,7 @@ function RankingView() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold text-xl text-gray-800">{(team.steps || 0).toLocaleString()}</p>
+                    <p className="font-bold text-xl text-gray-800">{(team.total_steps || 0).toLocaleString()}</p>
                     <p className="text-sm text-gray-500">걸음</p>
                   </div>
                 </div>

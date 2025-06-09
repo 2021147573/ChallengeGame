@@ -10,7 +10,7 @@ export async function GET() {
         script_accessible: false,
         error: null as string | null
       },
-      tables: {} as any
+      tables: {} as Record<string, unknown>
     };
 
     // Google Apps Script 연결 테스트
@@ -29,9 +29,9 @@ export async function GET() {
       } else {
         tests.connection.error = `HTTP ${testResponse.status}: ${testResponse.statusText}`;
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       tests.connection.script_accessible = false;
-      tests.connection.error = error.message;
+      tests.connection.error = error instanceof Error ? error.message : String(error);
     }
 
     return NextResponse.json({
@@ -41,11 +41,11 @@ export async function GET() {
       tests
     });
 
-  } catch (error: any) {
+  } catch (error: unknown) {
     return NextResponse.json({
       success: false,
       message: 'Google Spreadsheet 데이터베이스 연결 실패',
-      error: error.message,
+      error: error instanceof Error ? error.message : String(error),
       timestamp: new Date().toISOString()
     }, { status: 500 });
   }

@@ -502,27 +502,7 @@ export const getTeamMembers = async (teamCode: string): Promise<{ success: boole
   }
 };
 
-export const leaveTeam = async (teamCode: string, googleId: string): Promise<{ success: boolean; message?: string }> => {
-  try {
-    const requestData = {
-      action: 'delete',
-      table: 'team_members',
-      data: {
-        team_code: teamCode,
-        google_id: googleId
-      }
-    };
 
-    await makeRequest('database', requestData);
-    return { success: true };
-  } catch (error) {
-    console.error('팀 탈퇴 실패:', error);
-    return {
-      success: false,
-      message: '팀 탈퇴에 실패했습니다.'
-    };
-  }
-};
 
 // 호환성을 위한 함수들
 export const saveStepRecord = async (stepData: StepData): Promise<{ success: boolean; message?: string; data?: any }> => {

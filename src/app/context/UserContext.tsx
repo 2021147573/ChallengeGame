@@ -4,18 +4,7 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { GoogleUser, loadGoogleSDK, googleLogin, googleLogout, getCurrentGoogleUser, saveGoogleUserLocally } from '../lib/google';
 import { saveUser, getUser, User } from '../lib/database_simple';
 
-// UTF-8 바이트를 올바른 한글로 변환하는 함수
-function fixKoreanEncoding(text: string): string {
-  try {
-    // 이미 깨진 한글을 UTF-8 바이트로 변환한 후 다시 디코딩
-    const bytes = new TextEncoder().encode(text);
-    const decoder = new TextDecoder('utf-8');
-    return decoder.decode(bytes);
-  } catch (error) {
-    console.error('한글 인코딩 수정 실패:', error);
-    return text; // 실패하면 원본 반환
-  }
-}
+
 
 // 더 강력한 한글 복원 함수
 function decodeKoreanFromLatin1(text: string): string {
@@ -110,12 +99,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           console.log('DB 응답 구조 분석:', userResult.data);
           
           // 중첩된 구조 처리: userResult.data.data에 실제 데이터가 있을 수 있음
-          let rawData: any = userResult.data;
+          let rawData: unknown = userResult.data;
           
           // Apps Script에서 중첩된 응답을 보내는 경우 처리
-          if (rawData && typeof rawData === 'object' && rawData.success && rawData.data) {
+          if (rawData && typeof rawData === 'object' && 'success' in rawData && 'data' in rawData) {
             console.log('중첩된 구조 감지, 내부 data 추출');
-            rawData = rawData.data;
+            rawData = (rawData as { data: unknown }).data;
           }
           
           console.log('파싱할 원본 데이터:', rawData);
@@ -126,26 +115,26 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             console.log('배열에서 첫 번째 요소 추출:', actualUserData);
           }
           // 객체이고 google_id가 있는 경우
-          else if (typeof rawData === 'object' && rawData !== null && rawData.google_id) {
+          else if (typeof rawData === 'object' && rawData !== null && 'google_id' in rawData) {
             actualUserData = rawData;
             console.log('객체에서 직접 사용자 데이터 추출:', actualUserData);
           }
           // 객체의 값들 중에서 google_id가 있는 항목 찾기
           else if (typeof rawData === 'object' && rawData !== null) {
-            const values = Object.values(rawData);
-            for (const value of values) {
-              if (typeof value === 'object' && value !== null && (value as any).google_id) {
-                actualUserData = value;
-                console.log('객체 값에서 사용자 데이터 발견:', actualUserData);
-                break;
-              }
+                      const values = Object.values(rawData);
+          for (const value of values) {
+            if (typeof value === 'object' && value !== null && 'google_id' in value) {
+              actualUserData = value;
+              console.log('객체 값에서 사용자 데이터 발견:', actualUserData);
+              break;
             }
+          }
             
             // 여전히 못 찾았으면 배열 형태의 값 확인
             if (!actualUserData) {
               const arrayValues = values.filter(v => Array.isArray(v));
               for (const arr of arrayValues) {
-                if (arr.length > 0 && arr[0] && typeof arr[0] === 'object' && arr[0].google_id) {
+                if (arr.length > 0 && arr[0] && typeof arr[0] === 'object' && arr[0] !== null && 'google_id' in arr[0]) {
                   actualUserData = arr[0];
                   console.log('배열 값에서 사용자 데이터 발견:', actualUserData);
                   break;
@@ -221,8 +210,8 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         // 기본 로그인 시도
         loginResult = await googleLogin();
         console.log('기본 구글 로그인 성공');
-      } catch (error: any) {
-        console.error('구글 로그인 실패:', error.message);
+      } catch (error: unknown) {
+        console.error('구글 로그인 실패:', error instanceof Error ? error.message : String(error));
         throw error;
       }
       
@@ -241,12 +230,12 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
         if (userResult.success && userResult.data) {
           // 중첩된 구조 처리
-          let rawData: any = userResult.data;
+          let rawData: unknown = userResult.data;
           
           // Apps Script에서 중첩된 응답을 보내는 경우 처리
-          if (rawData && typeof rawData === 'object' && rawData.success && rawData.data) {
+          if (rawData && typeof rawData === 'object' && 'success' in rawData && 'data' in rawData) {
             console.log('로그인 시 중첩된 구조 감지, 내부 data 추출');
-            rawData = rawData.data;
+            rawData = (rawData as { data: unknown }).data;
           }
           
           let actualUserData = null;
@@ -256,7 +245,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             actualUserData = rawData[0];
           }
           // 객체이고 google_id가 있는 경우
-          else if (typeof rawData === 'object' && rawData !== null && rawData.google_id) {
+          else if (typeof rawData === 'object' && rawData !== null && 'google_id' in rawData) {
             actualUserData = rawData;
           }
           
@@ -314,9 +303,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         setUser(localUser);
         alert('데이터베이스 연동에 실패했지만 로컬에서 사용 가능합니다. 나중에 다시 시도해주세요.');
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('로그인 실패:', error);
-      alert(`로그인에 실패했습니다: ${error.message || '다시 시도해주세요.'}`);
+      alert(`로그인에 실패했습니다: ${error instanceof Error ? error.message : '다시 시도해주세요.'}`);
     } finally {
       setIsLoading(false);
     }

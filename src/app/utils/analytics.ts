@@ -1,12 +1,12 @@
 // Google Apps Script URL (랜딩페이지와 동일)
-const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbymW7lS5EyUaujC8A-kbBKNbhVZCBeGuHsezgDFNO6SjOfnDUHj-V4nEapMr8eXVzcYbQ/exec';
+;
 
 // 랜딩페이지와 동일한 IP 가져오기 (JSONP 방식)
 let ip = "null";
 function getIP(json: any) {
   try {
     ip = json.ip;
-  } catch (e) {
+  } catch {
     ip = 'unknown';
   }
 }
