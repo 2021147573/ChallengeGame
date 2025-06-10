@@ -588,7 +588,7 @@ export const getTeamRankings = async (): Promise<{ success: boolean; data?: any[
     
     stepRecords.forEach((record: any) => {
       // team_code 또는 team_id 필드를 확인 (둘 다 비어있으면 NO_TEAM)
-      const teamCode = record.team_code || record.team_id || 'NO_TEAM';
+      const teamCode = record.team_code || record.team_id || record.team_name || 'NO_TEAM';
       const steps = parseInt(record.steps) || 0;
       
       if (teamSteps[teamCode]) {
@@ -629,24 +629,30 @@ export const getTeamRankings = async (): Promise<{ success: boolean; data?: any[
       const teamName = team.name || teamCode;
       const totalSteps = teamSteps[teamCode] || 0;
       
-      rankings.push({
+      const teamData = {
         name: teamName,
-        steps: totalSteps,
+        total_steps: totalSteps, // page.tsx에서 사용하는 필드명으로 변경
+        steps: totalSteps, // 기존 호환성을 위해 유지
+        member_count: 0, // 일단 0으로 설정, 나중에 멤버 수 계산 추가 가능
         rank: 0 // 나중에 설정
-      });
+      };
+      
+      rankings.push(teamData);
     });
     
     // NO_TEAM 데이터가 있으면 추가
     if (teamSteps['NO_TEAM'] && teamSteps['NO_TEAM'] > 0) {
       rankings.push({
         name: '개인 참가자',
+        total_steps: teamSteps['NO_TEAM'],
         steps: teamSteps['NO_TEAM'],
+        member_count: 0,
         rank: 0
       });
     }
     
     // 걸음수 기준으로 정렬하고 순위 설정
-    rankings.sort((a, b) => b.steps - a.steps);
+    rankings.sort((a, b) => (b.total_steps || 0) - (a.total_steps || 0));
     rankings.forEach((team, index) => {
       team.rank = index + 1;
     });

@@ -211,6 +211,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         loginResult = await googleLogin();
         console.log('기본 구글 로그인 성공');
       } catch (error: unknown) {
+        // 취소된 경우는 에러를 다시 던지지 않음
+        if (error instanceof Error && (error as any).cancelled) {
+          console.log('사용자가 로그인을 취소했습니다.');
+          return; // 함수 종료, 에러 안 던짐
+        }
         console.error('구글 로그인 실패:', error instanceof Error ? error.message : String(error));
         throw error;
       }

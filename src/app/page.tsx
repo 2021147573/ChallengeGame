@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect } from 'react'
 
 import { extractStepsFromImage, validateStepData, StepData } from './utils/ocr'
 import { saveStepRecord, getTeamRankings } from './lib/database_simple'
@@ -98,7 +98,7 @@ function HomeContent() {
                     onClick={login}
                     className="px-4 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 font-medium text-sm sm:text-base"
                   >
-                    구글 로그인
+                    구글 로그인/가입하기
                   </button>
                 )}
               </div>
@@ -119,43 +119,86 @@ function HomeContent() {
 }
 
 function HomeView() {
+  const { user, isLoggedIn, isLoading, login } = useUser()
+  
   return (
     <div className="space-y-8">
       {/* Hero Section */}
       <div className="text-center py-12">
-        <h2 className="text-4xl font-bold text-gray-800 mb-4">
-          🚶‍♀️ 서울에서 부산까지 걸어가기 챌린지! 🚶‍♂️
+        <h2 className="text-4xl font-bold text-gray-800 mb-6">
+          목표를 게임처럼! 팀과 함께 도전하라! 🎯
         </h2>
-        <p className="text-xl text-gray-600 mb-8">
-          팀과 함께 2주 동안 400km를 걸어 목표를 달성해보세요!
-        </p>
-        <div className="bg-white rounded-lg p-6 shadow-md max-w-2xl mx-auto">
-          <h3 className="text-lg font-semibold mb-4">📊 현재 진행상황</h3>
-          <div className="bg-gray-200 rounded-full h-4 mb-4">
-            <div className="bg-indigo-500 h-4 rounded-full" style={{width: '35%'}}></div>
+        <div className="mb-8 max-w-4xl mx-auto">
+          <div className="text-xl text-gray-600 leading-relaxed text-center">
+            <p className="mb-4">
+              매번 마음만 먹고 실패했던 목표들.<br />
+              이제는 혼자가 아니라, 팀과 함께 도전하세요!
+            </p>
+            <p className="text-2xl font-bold text-indigo-600 mb-4">
+              [ 챌린지게임 ]
+            </p>
+            <p className="mb-4">
+              은 팀이 모여 목표를 정하고, 목표를 향한 미션을 게임처럼 클리어하는 새로운 도전 플랫폼입니다.
+            </p>
+            <p className="text-lg font-medium text-indigo-700">
+              오늘부터, 팀과 함께 목표를 이기는 게임을 시작해보세요.
+            </p>
           </div>
-          <p className="text-gray-600">140km / 400km 완주 (35%)</p>
+
+        </div>
+        <div className="bg-gradient-to-r from-indigo-500 via-purple-500 to-pink-500 rounded-xl p-8 shadow-lg max-w-4xl mx-auto text-white">
+          <div className="text-center mb-6">
+            <h3 className="text-2xl font-bold mb-2">🎮 게임처럼 즐기는 목표 달성</h3>
+            <p className="text-indigo-100">챌린지게임만의 특별한 경험을 만나보세요</p>
+          </div>
+          <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+            <div className="flex items-center gap-4">
+              <div className="text-4xl">👥</div>
+              <div>
+                <div className="font-bold text-lg">팀 협력</div>
+                <div className="text-indigo-100 text-sm">함께하면 더 강해져요</div>
+              </div>
+            </div>
+            <div className="hidden md:block text-white/50 text-2xl">→</div>
+            <div className="flex items-center gap-4">
+              <div className="text-4xl">🏆</div>
+              <div>
+                <div className="font-bold text-lg">미션 클리어</div>
+                <div className="text-indigo-100 text-sm">게임처럼 재미있게</div>
+              </div>
+            </div>
+            <div className="hidden md:block text-white/50 text-2xl">→</div>
+            <div className="flex items-center gap-4">
+              <div className="text-4xl">📈</div>
+              <div>
+                <div className="font-bold text-lg">성장 추적</div>
+                <div className="text-indigo-100 text-sm">발전하는 모습을 확인</div>
+              </div>
+            </div>
+          </div>
         </div>
       </div>
 
-      {/* Stats */}
-      <div className="grid md:grid-cols-3 gap-6">
-        <div className="bg-white rounded-lg p-6 shadow-md text-center">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">오늘의 목표</h3>
-          <p className="text-3xl font-bold text-indigo-600">10,000</p>
-          <p className="text-gray-600">걸음</p>
+      {/* 걷기 다이어트 메시지 */}
+      <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto">
+        <div className="bg-gradient-to-br from-green-50 to-emerald-100 rounded-lg p-6 shadow-md text-center border border-green-200">
+          <div className="text-3xl mb-3">🚶‍♀️👥</div>
+          <h3 className="text-lg font-bold text-green-800 mb-2">팀으로 걷는 다이어트,</h3>
+          <p className="text-green-700 font-medium">실패할 수 없습니다.</p>
         </div>
-        <div className="bg-white rounded-lg p-6 shadow-md text-center">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">우리 팀 순위</h3>
-          <p className="text-3xl font-bold text-green-600">2</p>
-          <p className="text-gray-600">위 / 총 5팀</p>
+        <div className="bg-gradient-to-br from-blue-50 to-sky-100 rounded-lg p-6 shadow-md text-center border border-blue-200">
+          <div className="text-3xl mb-3">🏃‍♂️⭐</div>
+          <h3 className="text-lg font-bold text-blue-800 mb-2">다이어트,</h3>
+          <p className="text-blue-700 font-medium">오늘부터 걸어서 시작하세요.</p>
         </div>
-        <div className="bg-white rounded-lg p-6 shadow-md text-center">
-          <h3 className="text-lg font-semibold text-gray-800 mb-2">남은 날짜</h3>
-          <p className="text-3xl font-bold text-orange-600">8</p>
-          <p className="text-gray-600">일</p>
+        <div className="bg-gradient-to-br from-purple-50 to-violet-100 rounded-lg p-6 shadow-md text-center border border-purple-200">
+          <div className="text-3xl mb-3">👟💪</div>
+          <h3 className="text-lg font-bold text-purple-800 mb-2">꾸준한 걸음이,</h3>
+          <p className="text-purple-700 font-medium">가벼운 나를 만듭니다.</p>
         </div>
       </div>
+
+
     </div>
   )
 }
@@ -566,7 +609,7 @@ function RankingView() {
   const [userTeams, setUserTeams] = useState<{ team_code: string; name: string }[]>([])
 
   // 사용자의 팀 정보 가져오기
-  const loadUserTeams = useCallback(async () => {
+  const loadUserTeams = async () => {
     if (!user) return
     
     try {
@@ -577,27 +620,28 @@ function RankingView() {
     } catch (error) {
       console.error('사용자 팀 로드 오류:', error)
     }
-  }, [user])
+  }
 
   // 실시간 랭킹 불러오기
   const loadRankings = async () => {
     setIsLoading(true)
     try {
-      console.log('=== 랭킹 데이터 로드 시작 ===')
       const result = await getTeamRankings()
-      console.log('랭킹 데이터 결과:', result)
       
       if (result.success && result.data) {
         // 배열인지 확인하고 설정
         if (Array.isArray(result.data)) {
-          console.log('설정할 팀 랭킹:', result.data)
+          // 한 번만 디버깅 정보 출력
+          if (result.data.length > 0) {
+            console.log('첫 번째 팀 데이터:', result.data[0]);
+            console.log('total_steps 값:', result.data[0].total_steps);
+            console.log('steps 값:', result.data[0].steps);
+          }
           setTeams(result.data)
         } else {
-          console.log('랭킹 데이터가 배열이 아님:', typeof result.data)
           setTeams([])
         }
       } else {
-        console.log('랭킹 데이터 로드 실패:', result.message)
         setTeams([])
       }
     } catch (error) {
@@ -612,7 +656,7 @@ function RankingView() {
   useEffect(() => {
     loadRankings()
     loadUserTeams()
-  }, [user, loadUserTeams])
+  }, [user])
 
   return (
     <div className="max-w-4xl mx-auto">
@@ -688,43 +732,7 @@ function RankingView() {
         </div>
       </div>
       
-      <div className="mt-8 grid md:grid-cols-2 gap-6">
-        <div className="bg-white rounded-lg p-6 shadow-md">
-          <h3 className="font-semibold text-gray-800 mb-4">📈 우리팀 일별 걸음수</h3>
-          <div className="space-y-2">
-            {[
-              { date: '12/15', steps: 12450 },
-              { date: '12/14', steps: 9876 },
-              { date: '12/13', steps: 11234 },
-              { date: '12/12', steps: 8765 },
-            ].map((day) => (
-              <div key={day.date} className="flex justify-between items-center">
-                <span className="text-gray-600">{day.date}</span>
-                <span className="font-semibold">{day.steps.toLocaleString()} 걸음</span>
-              </div>
-            ))}
-          </div>
-        </div>
-        
-        <div className="bg-white rounded-lg p-6 shadow-md">
-          <h3 className="font-semibold text-gray-800 mb-4">🎯 오늘의 미션</h3>
-          <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4">
-            <p className="font-semibold text-purple-800">특별 미션!</p>
-            <p className="text-purple-700 mt-1">
-              팀원 모두 10,000보 이상 걷고 인증샷 업로드하기
-            </p>
-            <div className="mt-3">
-              <div className="flex justify-between text-sm text-purple-600">
-                <span>진행률</span>
-                <span>3/4명 완료</span>
-              </div>
-              <div className="bg-purple-200 rounded-full h-2 mt-1">
-                <div className="bg-purple-500 h-2 rounded-full" style={{width: '75%'}}></div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+
     </div>
   )
 }

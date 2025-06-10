@@ -26,10 +26,13 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
   const [memberStepsInfo, setMemberStepsInfo] = useState<{[key: string]: {todaySteps: number, totalSteps: number, lastUpdateDate: string | null}}>({})
   const [showCreateForm, setShowCreateForm] = useState(false)
   const [showJoinForm, setShowJoinForm] = useState(false)
+  const [showInvitePopup, setShowInvitePopup] = useState(false)
   const [loading, setLoading] = useState(false)
   const [initialLoading, setInitialLoading] = useState(true)
   const [teamsLoading, setTeamsLoading] = useState(false)
+  const [statsLoading, setStatsLoading] = useState(false)
   const [availableTeams, setAvailableTeams] = useState<(Team & { memberCount: number })[]>([])
+  const [copySuccess, setCopySuccess] = useState(false)
   
   // 팀 통계 상태
   const [teamStats, setTeamStats] = useState({
@@ -185,6 +188,7 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
 
   const loadTeamStats = useCallback(async () => {
     if (!selectedTeam) {
+      setStatsLoading(false)
       setTeamStats({
         totalSteps: 0,
         averageSteps: 0,
@@ -194,6 +198,7 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
       return
     }
 
+    setStatsLoading(true)
     try {
       // 팀 랭킹 데이터에서 팀 순위만 가져오기
       const rankingsResult = await getTeamRankings()
@@ -252,6 +257,8 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
         todaySteps: 0,
         teamRank: 0
       })
+    } finally {
+      setStatsLoading(false)
     }
   }, [selectedTeam, teamMembers, memberStepsInfo])
 
@@ -316,7 +323,34 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
     }
   }
 
-
+  // URL 복사 함수
+  const handleCopyInviteLink = async () => {
+    const inviteUrl = 'https://challengegame.vercel.app/?utm=share'
+    
+    try {
+      await navigator.clipboard.writeText(inviteUrl)
+      setCopySuccess(true)
+      setTimeout(() => setCopySuccess(false), 2000) // 2초 후 성공 메시지 숨김
+    } catch (error) {
+      console.error('URL 복사 실패:', error)
+      // 클립보드 API가 지원되지 않는 경우 fallback
+      const textArea = document.createElement('textarea')
+      textArea.value = inviteUrl
+      document.body.appendChild(textArea)
+      textArea.focus()
+      textArea.select()
+      try {
+        document.execCommand('copy')
+        setCopySuccess(true)
+        setTimeout(() => setCopySuccess(false), 2000)
+      } catch (fallbackError) {
+        console.error('fallback 복사도 실패:', fallbackError)
+        alert('URL 복사에 실패했습니다. 수동으로 복사해주세요: ' + inviteUrl)
+      } finally {
+        document.body.removeChild(textArea)
+      }
+    }
+  }
 
   useEffect(() => {
     if (isLoggedIn && user) {
@@ -349,6 +383,9 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
   useEffect(() => {
     if (selectedTeam && memberStepsInfo && Object.keys(memberStepsInfo).length > 0) {
       loadTeamStats()
+    } else if (selectedTeam) {
+      // 선택된 팀이 있지만 멤버 정보가 아직 없는 경우 로딩 상태 유지
+      setStatsLoading(true)
     }
   }, [selectedTeam, memberStepsInfo, loadTeamStats])
 
@@ -602,33 +639,69 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
     <div className="max-w-6xl mx-auto p-6">
       <div className="mb-8">
         <div className="mb-6">
-          <h2 className="text-3xl font-bold text-gray-800">🏆 {selectedTeam?.name || '팀을 선택하세요'}</h2>
-          <p className="text-gray-600 mt-2 text-lg">{selectedTeam?.description || '팀 설명이 없습니다'}</p>
+          <div className="flex items-center justify-between mb-2">
+            <h2 className="text-3xl font-bold text-gray-800">🏆 {selectedTeam?.name || '팀을 선택하세요'}</h2>
+            {/* 팀 초대 버튼 */}
+            {selectedTeam && (
+              <button
+                onClick={() => setShowInvitePopup(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-lg hover:from-green-600 hover:to-emerald-700 transition-all duration-200 transform hover:scale-105 font-medium shadow-md"
+              >
+                <span>👥</span>
+                팀원 초대하기
+              </button>
+            )}
+          </div>
+          <p className="text-gray-600 text-lg">{selectedTeam?.description || '팀 설명이 없습니다'}</p>
         </div>
         
         {/* 팀 통계 카드들 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 text-center transform hover:scale-105 transition-transform">
             <div className="text-3xl font-bold">
-              {teamStats.totalSteps.toLocaleString()}
+              {statsLoading ? (
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                </div>
+              ) : (
+                teamStats.totalSteps.toLocaleString()
+              )}
             </div>
             <div className="text-sm opacity-90">총 걸음수</div>
           </div>
           <div className="bg-gradient-to-r from-green-500 to-green-600 text-white rounded-lg p-6 text-center transform hover:scale-105 transition-transform">
             <div className="text-3xl font-bold">
-              {teamStats.averageSteps.toLocaleString()}
+              {statsLoading ? (
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                </div>
+              ) : (
+                teamStats.averageSteps.toLocaleString()
+              )}
             </div>
             <div className="text-sm opacity-90">평균 걸음수</div>
           </div>
           <div className="bg-gradient-to-r from-purple-500 to-purple-600 text-white rounded-lg p-6 text-center transform hover:scale-105 transition-transform">
             <div className="text-3xl font-bold">
-              {teamStats.todaySteps.toLocaleString()}
+              {statsLoading ? (
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                </div>
+              ) : (
+                teamStats.todaySteps.toLocaleString()
+              )}
             </div>
             <div className="text-sm opacity-90">오늘 걸음수</div>
           </div>
           <div className="bg-gradient-to-r from-orange-500 to-orange-600 text-white rounded-lg p-6 text-center transform hover:scale-105 transition-transform">
             <div className="text-3xl font-bold">
-              {teamStats.teamRank > 0 ? `${teamStats.teamRank}위` : '-'}
+              {statsLoading ? (
+                <div className="flex justify-center">
+                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-white"></div>
+                </div>
+              ) : (
+                teamStats.teamRank > 0 ? `${teamStats.teamRank}위` : '-'
+              )}
             </div>
             <div className="text-sm opacity-90">팀 순위</div>
           </div>
@@ -725,8 +798,68 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
           )}
         </div>
 
-        {/* 팀 전환 버튼만 유지 */}
+        {/* 팀 활동 정보 */}
+        <div className="grid md:grid-cols-2 gap-6 mb-6">
+          {/* 팀 일별 걸음수 */}
+          <div className="bg-white rounded-lg p-6 shadow-md">
+            <h3 className="font-semibold text-gray-800 mb-4">📈 팀 일별 걸음수</h3>
+            <div className="space-y-2">
+              {(() => {
+                const today = new Date();
+                const recentDays = [];
+                for (let i = 0; i < 4; i++) {
+                  const date = new Date(today);
+                  date.setDate(today.getDate() - i);
+                  const formattedDate = `${date.getMonth() + 1}/${date.getDate()}`;
+                  const steps = Math.floor(Math.random() * 5000) + 8000; // 임시 데이터
+                  recentDays.push({ date: formattedDate, steps });
+                }
+                return recentDays;
+              })().map((day) => (
+                <div key={day.date} className="flex justify-between items-center">
+                  <span className="text-gray-600">{day.date}</span>
+                  <span className="font-semibold">{day.steps.toLocaleString()} 걸음</span>
+                </div>
+              ))}
+            </div>
+          </div>
+          
+          {/* 오늘의 미션 */}
+          <div className="bg-white rounded-lg p-6 shadow-md">
+            <h3 className="font-semibold text-gray-800 mb-4">🎯 오늘의 미션</h3>
+            <div className="bg-gradient-to-r from-purple-100 to-pink-100 rounded-lg p-4">
+              <p className="font-semibold text-purple-800">특별 미션!</p>
+              <p className="text-purple-700 mt-1">
+                팀원 모두 10,000보 이상 걷고 인증샷 업로드하기
+              </p>
+              <div className="mt-3">
+                <div className="flex justify-between text-sm text-purple-600">
+                  <span>진행률</span>
+                  <span>{teamMembers.filter(member => {
+                    const stepsInfo = memberStepsInfo[member.google_id];
+                    return stepsInfo && stepsInfo.todaySteps >= 10000;
+                  }).length}/{teamMembers.length}명 완료</span>
+                </div>
+                <div className="bg-purple-200 rounded-full h-2 mt-1">
+                  <div 
+                    className="bg-purple-500 h-2 rounded-full" 
+                    style={{
+                      width: `${teamMembers.length > 0 ? 
+                        (teamMembers.filter(member => {
+                          const stepsInfo = memberStepsInfo[member.google_id];
+                          return stepsInfo && stepsInfo.todaySteps >= 10000;
+                        }).length / teamMembers.length) * 100 : 0}%`
+                    }}
+                  ></div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* 팀 관리 옵션 */}
         <div className="flex justify-start items-center">
+          {/* 팀 전환 */}
           {userTeams.length > 1 && (
             <div className="flex gap-2">
               <span className="text-sm text-gray-500 mr-2">팀 전환:</span>
@@ -746,6 +879,67 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
             </div>
           )}
         </div>
+
+        {/* 초대 팝업 */}
+        {showInvitePopup && (
+          <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+            {/* 블러 백그라운드 */}
+            <div className="absolute inset-0 bg-black/40 backdrop-blur-md"></div>
+            
+            {/* 모달 컨텐츠 */}
+            <div className="relative bg-white rounded-2xl p-8 w-full max-w-md shadow-2xl transform transition-all duration-300 scale-100 hover:scale-[1.02] border border-gray-200/50 animate-in fade-in zoom-in duration-300">
+              <div className="flex items-center justify-between mb-6">
+                <h3 className="text-xl font-bold text-gray-800">👥 팀원 초대하기</h3>
+                <button
+                  onClick={() => setShowInvitePopup(false)}
+                  className="text-gray-500 hover:text-gray-700 text-xl"
+                >
+                  ✕
+                </button>
+              </div>
+              
+              <div className="text-center mb-6">
+                <div className="text-4xl mb-4">🎯</div>
+                <p className="text-gray-600 mb-4">
+                  아래 링크를 친구들에게 공유해서<br />
+                  우리 팀에 초대해보세요!
+                </p>
+              </div>
+
+              {/* URL 표시 및 복사 */}
+              <div className="bg-gray-50 rounded-lg p-4 mb-6">
+                <div className="text-sm text-gray-500 mb-2">초대 링크</div>
+                <div className="flex items-center gap-2">
+                  <input
+                    type="text"
+                    value="https://challengegame.vercel.app/?utm=share"
+                    readOnly
+                    className="flex-1 px-3 py-2 bg-white border border-gray-300 rounded text-sm text-gray-800"
+                  />
+                  <button
+                    onClick={handleCopyInviteLink}
+                    className={`px-4 py-2 rounded text-sm font-medium transition-colors ${
+                      copySuccess 
+                        ? 'bg-green-500 text-white' 
+                        : 'bg-indigo-600 text-white hover:bg-indigo-700'
+                    }`}
+                  >
+                    {copySuccess ? '✅ 복사됨!' : '📋 복사'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setShowInvitePopup(false)}
+                  className="flex-1 px-6 py-3 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+                >
+                  닫기
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   )

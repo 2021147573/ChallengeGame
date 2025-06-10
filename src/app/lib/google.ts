@@ -129,7 +129,9 @@ export const googleLogin = (): Promise<GoogleUser> => {
     };
     cancelButton.onclick = () => {
       document.body.removeChild(tempDiv);
-      reject(new Error('로그인이 취소되었습니다.'));
+      const cancelError = new Error('로그인이 취소되었습니다.');
+      (cancelError as any).cancelled = true;
+      reject(cancelError);
     };
     tempDiv.appendChild(cancelButton);
   });
