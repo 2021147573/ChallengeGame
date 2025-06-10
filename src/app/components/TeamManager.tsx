@@ -46,6 +46,8 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
   const [teamName, setTeamName] = useState('')
   const [teamDescription, setTeamDescription] = useState('')
 
+  const TEAM_GOAL_STEPS = 300000;
+
   const loadUserTeams = useCallback(async () => {
     if (!user) return
     
@@ -600,6 +602,25 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
           <p className="text-gray-600 text-lg">{selectedTeam?.description || '팀 설명이 없습니다'}</p>
         </div>
         
+        {/* 팀 목표 프로그레스 바 */}
+        <div className="bg-white rounded-lg shadow p-6 mb-8">
+            <div className="flex justify-between items-center mb-2">
+              <h3 className="text-lg font-bold text-gray-700">팀 목표 달성도</h3>
+              <span className="text-lg font-bold text-indigo-600">
+                {((teamStats.totalSteps / TEAM_GOAL_STEPS) * 100).toFixed(1)}%
+              </span>
+            </div>
+            <div className="w-full bg-gray-200 rounded-full h-4">
+              <div 
+                className="bg-gradient-to-r from-indigo-500 to-purple-600 h-4 rounded-full transition-all duration-500" 
+                style={{ width: `${Math.min((teamStats.totalSteps / TEAM_GOAL_STEPS) * 100, 100)}%` }}
+              ></div>
+            </div>
+            <div className="text-right text-sm text-gray-500 mt-1">
+              {teamStats.totalSteps.toLocaleString()} / {TEAM_GOAL_STEPS.toLocaleString()} 걸음
+            </div>
+        </div>
+
         {/* 팀 통계 카드들 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
           <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-lg p-6 text-center transform hover:scale-105 transition-transform">
