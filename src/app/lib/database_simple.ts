@@ -137,11 +137,7 @@ export const saveUser = async (userData: User): Promise<{ success: boolean; mess
       }
     };
 
-    console.log('사용자 UPSERT 요청 (google_id 기준):', requestData);
-    console.log('대상 google_id:', userData.google_id);
-    
     const result = await makeRequest('database', requestData);
-    console.log('UPSERT 결과:', result);
     
     return result;
   } catch (error) {
@@ -175,9 +171,6 @@ export const getUser = async (googleId: string): Promise<{ success: boolean; dat
 // 팀 관리
 export const createTeam = async (teamData: Omit<Team, 'team_code'>): Promise<{ success: boolean; message?: string; data?: Team }> => {
   try {
-    console.log('=== 팀 생성 및 자동 가입 시작 ===');
-    console.log('입력 데이터:', teamData);
-
     // 1. 팀 생성
     const requestData = {
       action: 'insertTeam',
@@ -185,15 +178,9 @@ export const createTeam = async (teamData: Omit<Team, 'team_code'>): Promise<{ s
       data: teamData
     };
     
-    console.log('전송할 요청 데이터:', requestData);
     const result = await makeRequest('database', requestData);
-    console.log('팀 생성 API 호출 결과:', result);
-    console.log('result.success:', result.success);
-    console.log('result.data:', result.data);
-    console.log('result.message:', result.message);
 
     if (!result.success) {
-      console.error('팀 생성 실패:', result.message);
       return {
         success: false,
         message: result.message || '팀 생성에 실패했습니다.'
@@ -202,33 +189,23 @@ export const createTeam = async (teamData: Omit<Team, 'team_code'>): Promise<{ s
 
     // result.data 구조 확인
     let createdTeam = result.data;
-    console.log('원본 createdTeam:', createdTeam);
     
     // 중첩된 구조 처리
     if (createdTeam && typeof createdTeam === 'object' && createdTeam.success && createdTeam.data) {
-      console.log('중첩된 구조 감지, 내부 data 추출');
       createdTeam = createdTeam.data;
     }
-    
-    console.log('최종 createdTeam:', createdTeam);
 
     if (!createdTeam || !createdTeam.team_code) {
-      console.error('팀 코드가 없는 응답:', createdTeam);
       return {
         success: false,
         message: '팀 생성에 성공했으나 팀 코드를 받지 못했습니다.'
       };
     }
 
-    console.log('생성된 팀:', createdTeam);
-
     // 2. 생성자를 팀에 자동 가입 (리더 역할)
-    console.log('팀 생성자 자동 가입 시작');
     const joinResult = await joinTeam(createdTeam.team_code, teamData.creator_id);
-    console.log('자동 가입 결과:', joinResult);
 
     if (!joinResult.success) {
-      console.warn('팀 생성은 성공했으나 자동 가입 실패:', joinResult.message);
       // 팀은 생성되었으므로 성공으로 처리하되 메시지에 경고 포함
       return {
         success: true,
@@ -236,8 +213,6 @@ export const createTeam = async (teamData: Omit<Team, 'team_code'>): Promise<{ s
         message: `팀이 생성되었지만 자동 가입에 실패했습니다: ${joinResult.message}`
       };
     }
-
-    console.log('팀 생성 및 자동 가입 완료');
     return {
       success: true,
       data: createdTeam,
@@ -287,18 +262,13 @@ export const getUserStepsInfo = async (googleId: string): Promise<{
   message?: string 
 }> => {
   try {
-    console.log('=== 사용자 걸음수 정보 조회 ===');
-    console.log('대상 사용자 ID:', googleId);
-
     const requestData = {
       action: 'getUserStepsInfo',
       table: 'step_records',
       google_id: googleId
     };
 
-    console.log('전송할 요청 데이터:', requestData);
     const result = await makeRequest('database', requestData);
-    console.log('사용자 걸음수 정보 결과:', result);
 
     if (result.success) {
       // 중첩된 구조 처리: result.data.data에 실제 데이터가 있을 수 있음
@@ -307,7 +277,6 @@ export const getUserStepsInfo = async (googleId: string): Promise<{
       // Apps Script에서 중첩된 응답을 보내는 경우 처리
       if (actualData && typeof actualData === 'object' && actualData.success && actualData.data) {
         actualData = actualData.data;
-        console.log('중첩된 구조에서 실제 데이터 추출:', actualData);
       }
       
       if (actualData) {
@@ -408,11 +377,6 @@ export const getUserTeams = async (googleId: string): Promise<{ success: boolean
 
 export const getTeamMembers = async (teamCode: string): Promise<{ success: boolean; data?: TeamMember[]; message?: string }> => {
   try {
-    console.log('=== getTeamMembers 함수 시작 ===');
-    console.log('요청할 팀 코드:', teamCode);
-    console.log('팀 코드 타입:', typeof teamCode);
-    console.log('팀 코드 길이:', teamCode.length);
-    
     if (!teamCode || teamCode.trim() === '') {
       console.error('팀 코드가 비어있습니다');
       return {
@@ -427,9 +391,7 @@ export const getTeamMembers = async (teamCode: string): Promise<{ success: boole
       team_code: teamCode.trim()  // 직접 파라미터로 전달
     };
 
-    console.log('요청 데이터:', requestData);
     const result = await makeRequest('database', requestData);
-    console.log('팀 멤버 조회 원본 결과:', result);
 
     if (result.success && result.data) {
       let members = [];
@@ -446,7 +408,6 @@ export const getTeamMembers = async (teamCode: string): Promise<{ success: boole
         members = actualData;
       } else if (typeof actualData === 'object') {
         const values = Object.values(actualData);
-        console.log('Object values:', values);
         
         // values[1]이 배열인 경우 (일반적인 Apps Script 응답 패턴)
         if (values.length >= 2 && Array.isArray(values[1])) {
@@ -458,19 +419,6 @@ export const getTeamMembers = async (teamCode: string): Promise<{ success: boole
         }
       }
       
-      console.log('파싱된 멤버 데이터:', members);
-      console.log('멤버 수:', members.length);
-      
-      // 각 멤버의 team_code 확인 (디버깅용)
-      members.forEach((member, index) => {
-        console.log(`멤버 ${index + 1}:`, {
-          google_id: member.google_id,
-          team_code: member.team_code,
-          name: member.name,
-          email: member.email
-        });
-      });
-      
       // Google Apps Script에서 이미 필터링되었지만, 안전을 위해 한 번 더 필터링
       const filteredMembers = members.filter((member: any) => 
         member && 
@@ -478,14 +426,11 @@ export const getTeamMembers = async (teamCode: string): Promise<{ success: boole
         member.team_code === teamCode.trim()
       );
       
-      console.log('최종 필터링된 멤버들:', filteredMembers);
-      
       return {
         success: true,
         data: filteredMembers
       };
     } else {
-      console.log('팀 멤버 조회 실패 또는 데이터 없음:', result.message);
       return {
         success: true,
         data: [],
@@ -775,7 +720,6 @@ export const joinTeamWithLimit = async (teamCode: string, googleId: string): Pro
       }
 
       if (userTeamCodes.length > 0) {
-        console.log('다른 팀에 이미 가입되어 있음:', userTeamCodes);
         return {
           success: false,
           message: `이미 다른 팀(${userTeamsResult.data[0].name})에 가입되어 있습니다. 팀을 변경하려면 먼저 탈퇴해주세요.`
@@ -784,13 +728,10 @@ export const joinTeamWithLimit = async (teamCode: string, googleId: string): Pro
     }
 
     // 2. 팀 멤버 수 확인 (정원 체크)
-    console.log('2단계: 팀 정원 체크');
     const membersResult = await getTeamMembers(teamCode);
-    console.log('팀 멤버 조회 결과:', membersResult);
     
     if (membersResult.success && membersResult.data) {
       const memberCount = Array.isArray(membersResult.data) ? membersResult.data.length : 0;
-      console.log('현재 멤버 수:', memberCount);
       
       if (memberCount >= 3) {
         return {
@@ -801,7 +742,6 @@ export const joinTeamWithLimit = async (teamCode: string, googleId: string): Pro
     }
 
     // 3. 팀 가입 실행
-    console.log('3단계: 팀 가입 실행');
     const result = await makeRequest('database', {
       action: 'insert',
       table: 'team_members',
@@ -812,8 +752,6 @@ export const joinTeamWithLimit = async (teamCode: string, googleId: string): Pro
         joined_at: getTimeStamp()
       }
     });
-
-    console.log('팀 가입 결과:', result);
 
     if (result.success) {
       return {
@@ -839,9 +777,6 @@ export const joinTeamWithLimit = async (teamCode: string, googleId: string): Pro
 // 팀의 오늘 걸음수 가져오기
 export const getTeamTodaySteps = async (teamCode: string): Promise<{ success: boolean; data?: number; message?: string }> => {
   try {
-    console.log('=== 팀 오늘 걸음수 조회 시작 ===');
-    console.log('팀 코드:', teamCode);
-    
     if (!teamCode || teamCode.trim() === '') {
       return {
         success: false,
@@ -855,9 +790,7 @@ export const getTeamTodaySteps = async (teamCode: string): Promise<{ success: bo
       team_code: teamCode.trim()
     };
 
-    console.log('오늘 걸음수 요청 데이터:', requestData);
     const result = await makeRequest('database', requestData);
-    console.log('팀 오늘 걸음수 조회 결과:', result);
 
     if (result.success && typeof result.data === 'number') {
       return {

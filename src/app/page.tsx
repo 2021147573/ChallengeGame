@@ -295,7 +295,7 @@ function UploadView() {
       setExtractedData(stepData)
       
       // TODO: Supabase에 데이터 저장
-      console.log('추출된 걸음수 데이터:', stepData)
+
       
     } catch (error) {
       console.error('OCR 처리 오류:', error)
@@ -633,9 +633,7 @@ function RankingView() {
         if (Array.isArray(result.data)) {
           // 한 번만 디버깅 정보 출력
           if (result.data.length > 0) {
-            console.log('첫 번째 팀 데이터:', result.data[0]);
-            console.log('total_steps 값:', result.data[0].total_steps);
-            console.log('steps 값:', result.data[0].steps);
+            
           }
           setTeams(result.data)
         } else {

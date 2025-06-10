@@ -75,49 +75,32 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   // 로그인 상태 확인
   const checkLoginStatus = async () => {
     try {
-      console.log('=== 로그인 상태 확인 시작 ===');
       const currentGoogleUser = await getCurrentGoogleUser();
-      console.log('저장된 구글 사용자:', currentGoogleUser);
-      console.log('구글 사용자 ID:', currentGoogleUser?.id);
-      console.log('구글 사용자 이메일:', currentGoogleUser?.email);
-      console.log('구글 사용자 이름:', currentGoogleUser?.name);
       
       if (currentGoogleUser) {
         setGoogleUser(currentGoogleUser);
-        console.log('구글 사용자 정보 설정 완료');
         
         // 데이터베이스에서 사용자 정보 조회
         const userResult = await getUser(currentGoogleUser.id);
-        console.log('DB 사용자 조회 결과 전체:', userResult);
-        console.log('DB 사용자 조회 success:', userResult.success);
-        console.log('DB 사용자 조회 data:', userResult.data);
-        console.log('DB 사용자 조회 data 타입:', typeof userResult.data);
         
         // DB 응답에서 실제 사용자 데이터 추출
         let actualUserData = null;
         if (userResult.success && userResult.data) {
-          console.log('DB 응답 구조 분석:', userResult.data);
-          
           // 중첩된 구조 처리: userResult.data.data에 실제 데이터가 있을 수 있음
           let rawData: unknown = userResult.data;
           
           // Apps Script에서 중첩된 응답을 보내는 경우 처리
           if (rawData && typeof rawData === 'object' && 'success' in rawData && 'data' in rawData) {
-            console.log('중첩된 구조 감지, 내부 data 추출');
             rawData = (rawData as { data: unknown }).data;
           }
-          
-          console.log('파싱할 원본 데이터:', rawData);
           
           // 배열인 경우 첫 번째 요소 사용
           if (Array.isArray(rawData) && rawData.length > 0) {
             actualUserData = rawData[0];
-            console.log('배열에서 첫 번째 요소 추출:', actualUserData);
           }
           // 객체이고 google_id가 있는 경우
           else if (typeof rawData === 'object' && rawData !== null && 'google_id' in rawData) {
             actualUserData = rawData;
-            console.log('객체에서 직접 사용자 데이터 추출:', actualUserData);
           }
           // 객체의 값들 중에서 google_id가 있는 항목 찾기
           else if (typeof rawData === 'object' && rawData !== null) {
@@ -125,7 +108,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           for (const value of values) {
             if (typeof value === 'object' && value !== null && 'google_id' in value) {
               actualUserData = value;
-              console.log('객체 값에서 사용자 데이터 발견:', actualUserData);
               break;
             }
           }
@@ -136,34 +118,19 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
               for (const arr of arrayValues) {
                 if (arr.length > 0 && arr[0] && typeof arr[0] === 'object' && arr[0] !== null && 'google_id' in arr[0]) {
                   actualUserData = arr[0];
-                  console.log('배열 값에서 사용자 데이터 발견:', actualUserData);
                   break;
                 }
               }
             }
           }
-          
-          console.log('최종 추출된 사용자 데이터:', actualUserData);
         }
 
         if (actualUserData) {
           setUser(actualUserData);
-          console.log('DB 사용자 정보 설정 완료:', actualUserData);
         } else {
-          console.log('DB에 사용자 정보 없음, 새 사용자로 등록');
-          console.log('userResult.success:', userResult.success);
-          console.log('userResult.data:', userResult.data);
           
           // DB에 정보가 없으면 새 사용자로 등록
-          console.log('=== 구글 사용자 원본 데이터 확인 ===')
-          console.log('구글 사용자 이름 원본:', currentGoogleUser.name)
-          console.log('구글 사용자 이름 길이:', currentGoogleUser.name.length)
-          console.log('구글 사용자 이름 charCodeAt:', Array.from(currentGoogleUser.name).map(char => char.charCodeAt(0)))
-          
-          // 한글 인코딩 수정 시도
           const fixedName = decodeKoreanFromLatin1(currentGoogleUser.name)
-          console.log('수정된 이름:', fixedName)
-          console.log('수정된 이름 charCodeAt:', Array.from(fixedName).map(char => char.charCodeAt(0)))
           
           const newUser: User = {
             google_id: currentGoogleUser.id,
@@ -172,26 +139,19 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             nickname: fixedName,
             profile_image: currentGoogleUser.picture
           };
-          console.log('새 사용자 정보 생성:', newUser);
           
           // 스프레드시트에 사용자 정보 저장
           try {
             const saveResult = await saveUser(newUser);
-            console.log('사용자 DB 저장 결과:', saveResult);
-            
-            if (saveResult.success) {
-              console.log('✅ 새 사용자가 스프레드시트에 저장되었습니다');
-            } else {
-              console.error('❌ 사용자 저장 실패:', saveResult.message);
+            if (!saveResult.success) {
+              console.error('사용자 저장 실패:', saveResult.message);
             }
           } catch (error) {
-            console.error('❌ 사용자 저장 중 오류:', error);
+            console.error('사용자 저장 중 오류:', error);
           }
           
           setUser(newUser);
         }
-      } else {
-        console.log('저장된 구글 사용자 정보 없음');
       }
     } catch (error) {
       console.error('로그인 상태 확인 실패:', error);
@@ -202,18 +162,15 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
   const login = async () => {
     try {
       setIsLoading(true);
-      console.log('구글 로그인 시도 시작');
       
       let loginResult: GoogleUser;
       
       try {
         // 기본 로그인 시도
         loginResult = await googleLogin();
-        console.log('기본 구글 로그인 성공');
       } catch (error: unknown) {
         // 취소된 경우는 에러를 다시 던지지 않음
         if (error instanceof Error && (error as any).cancelled) {
-          console.log('사용자가 로그인을 취소했습니다.');
           return; // 함수 종료, 에러 안 던짐
         }
         console.error('구글 로그인 실패:', error instanceof Error ? error.message : String(error));
@@ -227,11 +184,9 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
 
       // 데이터베이스에서 사용자 조회
       const googleId = loginResult.id;
-      console.log('구글 로그인 성공, 사용자 정보 조회 시도:', googleId);
       
       try {
         const userResult = await getUser(googleId);
-        console.log('사용자 조회 결과:', userResult);
 
         if (userResult.success && userResult.data) {
           // 중첩된 구조 처리
@@ -239,7 +194,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           
           // Apps Script에서 중첩된 응답을 보내는 경우 처리
           if (rawData && typeof rawData === 'object' && 'success' in rawData && 'data' in rawData) {
-            console.log('로그인 시 중첩된 구조 감지, 내부 data 추출');
             rawData = (rawData as { data: unknown }).data;
           }
           
@@ -257,9 +211,7 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           if (actualUserData) {
             // 기존 사용자
             setUser(actualUserData);
-            console.log('기존 사용자 로그인 완료:', actualUserData);
           } else {
-            console.log('사용자 데이터 파싱 실패, 신규 사용자로 처리');
             // 신규 사용자로 처리
             const fixedName = decodeKoreanFromLatin1(loginResult.name)
             const newUser: User = {
@@ -271,13 +223,13 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             };
 
             const saveResult = await saveUser(newUser);
-            console.log('사용자 저장 결과:', saveResult);
+            if (!saveResult.success) {
+              console.error('사용자 저장 실패:', saveResult.message);
+            }
             
             setUser(newUser);
-            console.log('신규 사용자 등록 완료');
           }
         } else {
-          console.log('사용자 데이터 파싱 실패, 신규 사용자로 처리');
           // 신규 사용자로 처리
           const fixedName = decodeKoreanFromLatin1(loginResult.name)
           const newUser: User = {
@@ -289,10 +241,11 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
           };
 
           const saveResult = await saveUser(newUser);
-          console.log('사용자 저장 결과:', saveResult);
+          if (!saveResult.success) {
+            console.error('사용자 저장 실패:', saveResult.message);
+          }
           
           setUser(newUser);
-          console.log('신규 사용자 등록 완료');
         }
       } catch (dbError) {
         console.error('데이터베이스 연동 실패:', dbError);
@@ -323,7 +276,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       await googleLogout();
       setUser(null);
       setGoogleUser(null);
-      console.log('로그아웃 완료');
     } catch (error) {
       console.error('로그아웃 실패:', error);
     } finally {

@@ -55,14 +55,11 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
       
       if (result.success && result.data) {
         const teams = Array.isArray(result.data) ? result.data : []
-        console.log('로드된 사용자 팀들:', teams)
         setUserTeams(teams)
         if (teams.length > 0 && !selectedTeam) {
-          console.log('첫 번째 팀을 선택합니다:', teams[0])
           setSelectedTeam(teams[0])
         }
       } else {
-        console.log('사용자 팀 로드 실패:', result.message)
         setUserTeams([])
       }
     } catch (error) {
@@ -76,9 +73,7 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
   const loadAvailableTeams = useCallback(async () => {
     setTeamsLoading(true)
     try {
-      console.log('=== 가입 가능한 팀 목록 로드 시작 ===')
       const result = await getAllTeams()
-      console.log('getAllTeams 결과:', result)
       
       if (result.success && result.data) {
         if (!Array.isArray(result.data)) {
@@ -91,7 +86,6 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
           return !userTeamCodes.includes(team.team_code);
         });
         
-        console.log('필터링된 가입 가능한 팀들:', filteredTeams)
         setAvailableTeams(filteredTeams)
       } else {
         setAvailableTeams([])
@@ -106,44 +100,22 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
 
   const loadTeamMembers = useCallback(async () => {
     if (!selectedTeam) {
-      console.log('선택된 팀이 없어서 멤버 로드 건너뜀')
       setTeamMembers([])
       setMemberStepsInfo({})
       return
     }
 
     try {
-      console.log('=== 팀 멤버 로드 시작 ===')
-      console.log('선택된 팀:', selectedTeam)
-      console.log('팀 코드:', selectedTeam.team_code)
-      
       const result = await getTeamMembers(selectedTeam.team_code)
-      console.log('getTeamMembers 결과:', result)
       
       if (result.success && result.data) {
         const members = Array.isArray(result.data) ? result.data : []
-        console.log('파싱된 멤버 배열:', members)
-        
-        // 각 멤버의 정보를 자세히 로그
-        members.forEach((member, index) => {
-          console.log(`멤버 ${index + 1}:`, {
-            google_id: member.google_id,
-            name: member.name,
-            email: member.email,
-            profile_image: member.profile_image,
-            role: member.role,
-            joined_at: member.joined_at
-          })
-        })
-        
         setTeamMembers(members)
         
         // 각 멤버의 걸음수 정보 로드
-        console.log('멤버 걸음수 정보 로드 시작:', members.length, '명')
         const stepsInfoPromises = members.map(async (member) => {
           try {
             const stepsResult = await getUserStepsInfo(member.google_id)
-            console.log(`${member.name || member.google_id} 걸음수 정보:`, stepsResult)
             return {
               google_id: member.google_id,
               stepsInfo: stepsResult.success && stepsResult.data ? stepsResult.data : {
@@ -172,10 +144,8 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
           stepsInfoMap[result.google_id] = result.stepsInfo
         })
         
-        console.log('멤버 걸음수 정보 로드 완료:', stepsInfoMap)
         setMemberStepsInfo(stepsInfoMap)
       } else {
-        console.log('팀 멤버 데이터 없음 또는 실패:', result.message)
         setTeamMembers([])
         setMemberStepsInfo({})
       }
@@ -222,15 +192,7 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
         const todaySteps = memberTodaySteps.reduce((sum, steps) => sum + steps, 0)
         const averageSteps = Math.round(totalSteps / teamMembers.length)
         
-        console.log('팀 통계 계산:', {
-          teamMembers: teamMembers.length,
-          memberTotalSteps,
-          memberTodaySteps,
-          totalSteps,
-          todaySteps,
-          averageSteps,
-          teamRank
-        })
+
         
         setTeamStats({
           totalSteps,
@@ -240,7 +202,7 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
         })
       } else {
         // 멤버 데이터가 없는 경우 0으로 설정
-        console.log('멤버 데이터 없음, 기본값 설정')
+
         setTeamStats({
           totalSteps: 0,
           averageSteps: 0,
@@ -297,15 +259,9 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
 
     setLoading(true)
     try {
-      console.log('=== 팀 가입 시작 ===')
-      console.log('팀 코드:', teamCode)
-      console.log('사용자 ID:', user.google_id)
-      
       const result = await joinTeamWithLimit(teamCode, user.google_id)
-      console.log('팀 가입 결과:', result)
       
       if (result.success) {
-        console.log('팀 가입 성공, 데이터 새로고침 시작')
         await loadUserTeams()
         await loadAvailableTeams()
         setShowJoinForm(false)
@@ -365,17 +321,6 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
   }, [userTeams, loadAvailableTeams])
 
   useEffect(() => {
-    console.log('=== selectedTeam 변경됨 ===');
-    console.log('새로운 selectedTeam:', selectedTeam);
-    if (selectedTeam) {
-      console.log('팀 정보:', {
-        name: selectedTeam.name,
-        team_code: selectedTeam.team_code,
-        description: selectedTeam.description,
-        creator_id: selectedTeam.creator_id
-      });
-    }
-    
     loadTeamMembers()
   }, [selectedTeam, loadTeamMembers])
 

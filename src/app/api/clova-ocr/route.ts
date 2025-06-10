@@ -15,8 +15,6 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    console.log('클로바 OCR API 호출 시작')
-    
     // 네이버 클로바 OCR API 호출
     const response = await fetch(apiUrl, {
       method: 'POST',
@@ -37,7 +35,6 @@ export async function POST(request: NextRequest) {
     }
 
     const result = await response.json()
-    console.log('클로바 OCR API 응답 성공')
     
     return NextResponse.json(result)
     

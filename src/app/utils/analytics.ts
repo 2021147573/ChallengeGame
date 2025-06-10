@@ -124,30 +124,25 @@ export const logVisitor = async (): Promise<void> => {
         utm: getUTM(),
         device: getDeviceType()
       };
+    
+    const response = await fetch('/api/database', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        action: 'insert',
+        table: 'visitors',
+        data: visitorData
+      })
+    });
 
-      console.log('방문자 데이터:', visitorData);
-
-      const response = await fetch('/api/database', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          action: 'insert',
-          table: 'visitors',
-          data: visitorData
-        })
-      });
-
-      if (response.ok) {
-        const result = await response.json();
-        console.log('방문자 로그 저장 성공:', result);
-      } else {
-        console.error('방문자 로그 저장 실패:', response.status);
-      }
-    } catch (error) {
-      console.error('방문자 로그 저장 실패:', error);
+    if (!response.ok) {
+      console.error('방문자 로그 저장 실패:', response.status);
     }
+  } catch (error) {
+    console.error('방문자 로그 저장 실패:', error);
+  }
   }, 2000); // 2초 대기 (IP 가져오기를 위해)
 };
 
@@ -176,9 +171,7 @@ export const trackPageView = async (page: string): Promise<void> => {
       })
     });
 
-    if (response.ok) {
-      console.log('페이지뷰 추적 완료:', page);
-    } else {
+    if (!response.ok) {
       console.error('페이지뷰 추적 실패:', response.status);
     }
   } catch (error) {
@@ -188,5 +181,8 @@ export const trackPageView = async (page: string): Promise<void> => {
 
 // 간단한 페이지 추적 (이전 함수와의 호환성)
 export async function trackPageViewSimple(pageName?: string) {
-  console.log(`페이지 조회: ${pageName || window.location.pathname}`);
+  // 개발 환경에서만 로그 출력
+  if (process.env.NODE_ENV === 'development') {
+    console.log(`페이지 조회: ${pageName || window.location.pathname}`);
+  }
 }

@@ -34,7 +34,6 @@ export const loadGoogleSDK = (): Promise<void> => {
     script.src = 'https://accounts.google.com/gsi/client';
     script.onload = () => {
       if (window.google) {
-        console.log('구글 SDK 로드 완료');
         resolve();
       } else {
         reject(new Error('구글 SDK 로드 실패'));
@@ -148,7 +147,6 @@ export const googleLogout = (): Promise<void> => {
     localStorage.removeItem('google_user');
     sessionStorage.removeItem('google_user');
     
-    console.log('구글 로그아웃 완료');
     resolve();
   });
 };

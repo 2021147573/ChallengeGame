@@ -35,8 +35,6 @@ interface ClovaOcrResult {
 }
 
 export async function extractStepsFromImage(imageFile: File): Promise<StepData | null> {
-  console.log('🔍 클로바 OCR로 걸음수 추출 시작')
-  
   try {
     // 1. 파일을 base64로 변환
     const base64Image = await fileToBase64(imageFile)
@@ -46,7 +44,6 @@ export async function extractStepsFromImage(imageFile: File): Promise<StepData |
     
     // 3. OCR 결과에서 텍스트 추출
     const extractedText = extractTextFromClovaResult(ocrResult)
-    console.log('추출된 텍스트:', extractedText)
     
     // 4. 걸음수 패턴 매칭
     const stepsResult = extractStepsFromText(extractedText)
@@ -128,8 +125,6 @@ function extractStepsFromText(text: string): {
   confidence: number;
   matchedPattern: string;
 } {
-  console.log('걸음수 추출 시작:', text)
-
   // 텍스트 정리
   const cleanText = text.replace(/\s+/g, ' ').trim()
 
@@ -155,8 +150,6 @@ function extractStepsFromText(text: string): {
         continue
       }
       
-      console.log(`매칭됨: ${steps}걸음 (${name})`)
-      
       return {
         steps: steps,
         confidence: 95, // 클로바 OCR + 직접 '걸음' 매칭이므로 높은 신뢰도
@@ -165,7 +158,6 @@ function extractStepsFromText(text: string): {
     }
   }
 
-  console.log('걸음수를 찾을 수 없음')
   return {
     steps: 0,
     confidence: 0,
