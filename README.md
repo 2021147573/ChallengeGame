@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 챌린지게임
 
-## Getting Started
+**배포 주소:** [https://challengegame.vercel.app/](https://challengegame.vercel.app/)
 
-First, run the development server:
+## 로컬 실행 방법
+
+1. 이 저장소를 클론합니다.
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+git clone https://github.com/2021147573/ChallengeGame.git
+cd challengegame
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+2. 패키지를 설치합니다. (pnpm 사용)
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+pnpm install
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+3. `.env.local` 파일을 프로젝트 루트에 생성하고, 다음과 같은 환경 변수를 추가합니다.
 
-## Learn More
+```
+NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
+NEXT_PUBLIC_GOOGLE_CLIENT_SECRET=your_google_client_secret
+NAVER_CLOVA_OCR_API_KEY=your_clova_ocr_key
+NAVER_CLOVA_OCR_SECRET=your_clova_ocr_secret
+```
 
-To learn more about Next.js, take a look at the following resources:
+4. 로컬 서버를 실행합니다.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+```bash
+pnpm dev
+```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. 브라우저에서 `http://localhost:3000`에 접속하여 확인합니다.
