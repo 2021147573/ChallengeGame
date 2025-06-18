@@ -30,7 +30,7 @@ NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
 ```bash
 pnpm dev
 ```
-프로덕션환경실행
+혹은 프로덕션 환경실행
 ```bash
 pnpm build
 pnpm start
