@@ -26,7 +26,6 @@ export async function POST(request: NextRequest) {
       url += `&data=${encodeURIComponent(dataString)}`
       console.log('인코딩된 데이터:', encodeURIComponent(dataString))
     } else if (action === 'get') {
-      // GET 요청의 경우 추가 파라미터들을 URL에 추가
       Object.keys(data || {}).forEach(key => {
         if (data[key] !== undefined && data[key] !== null) {
           url += `&${key}=${encodeURIComponent(data[key])}`
@@ -80,13 +79,11 @@ export async function POST(request: NextRequest) {
     try {
       let cleanResult = result
       
-      // undefined( 형태의 JSONP 응답 처리
       if (result.startsWith('undefined(') && result.endsWith(')')) {
-        cleanResult = result.slice(10, -1) // 'undefined(' 제거하고 마지막 ')' 제거
+        cleanResult = result.slice(10, -1)
         console.log('JSONP 응답 정리됨:', cleanResult)
       }
-      
-      // undefined 응답 처리
+
       if (cleanResult === 'undefined' || cleanResult.trim() === '') {
         console.log('Apps Script가 undefined 또는 빈 응답을 반환했습니다.')
         return NextResponse.json({

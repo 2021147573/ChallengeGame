@@ -44,7 +44,6 @@ export const loadGoogleSDK = (): Promise<void> => {
   });
 };
 
-// 간단한 구글 로그인 (버튼 클릭)
 export const googleLogin = (): Promise<GoogleUser> => {
   return new Promise((resolve, reject) => {
     if (!window.google) {
@@ -58,7 +57,6 @@ export const googleLogin = (): Promise<GoogleUser> => {
       return;
     }
 
-    // 임시 버튼 엘리먼트 생성
     const tempDiv = document.createElement('div');
     tempDiv.style.position = 'fixed';
     tempDiv.style.top = '50%';
@@ -88,7 +86,6 @@ export const googleLogin = (): Promise<GoogleUser> => {
             family_name: payload.family_name
           };
 
-          // 임시 엘리먼트 제거
           document.body.removeChild(tempDiv);
           resolve(userInfo);
         } catch (error) {
@@ -98,7 +95,6 @@ export const googleLogin = (): Promise<GoogleUser> => {
       }
     });
 
-    // 버튼 렌더링
     window.google.accounts.id.renderButton(tempDiv, {
       theme: "filled_blue",
       size: "large",
@@ -108,7 +104,6 @@ export const googleLogin = (): Promise<GoogleUser> => {
       logo_alignment: "left"
     });
 
-    // 취소 버튼 추가
     const cancelButton = document.createElement('button');
     cancelButton.textContent = '취소';
     cancelButton.style.marginTop = '10px';
@@ -136,14 +131,12 @@ export const googleLogin = (): Promise<GoogleUser> => {
   });
 };
 
-// 구글 로그아웃
 export const googleLogout = (): Promise<void> => {
   return new Promise((resolve) => {
     if (window.google && window.google.accounts) {
       window.google.accounts.id.disableAutoSelect();
     }
     
-    // 로컬 스토리지 및 세션 스토리지 정리
     localStorage.removeItem('google_user');
     sessionStorage.removeItem('google_user');
     
@@ -151,16 +144,13 @@ export const googleLogout = (): Promise<void> => {
   });
 };
 
-// 로그인 상태 확인
 export const getGoogleLoginStatus = (): Promise<boolean> => {
   return new Promise((resolve) => {
-    // 로컬 스토리지에서 사용자 정보 확인
     const storedUser = localStorage.getItem('google_user');
     resolve(!!storedUser);
   });
 };
 
-// 현재 로그인된 사용자 정보 가져오기
 export const getCurrentGoogleUser = (): Promise<GoogleUser | null> => {
   return new Promise((resolve) => {
     try {
@@ -178,7 +168,6 @@ export const getCurrentGoogleUser = (): Promise<GoogleUser | null> => {
   });
 };
 
-// 사용자 정보 로컬 저장
 export const saveGoogleUserLocally = (user: GoogleUser): void => {
   try {
     localStorage.setItem('google_user', JSON.stringify(user));

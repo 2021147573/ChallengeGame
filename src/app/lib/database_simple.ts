@@ -1,5 +1,3 @@
-// 간단한 데이터베이스 유틸리티 (CORS 문제 해결용)
-
 // 타임스탬프 생성
 function getTimeStamp(): string {
   const date = new Date();
@@ -14,7 +12,6 @@ function getTimeStamp(): string {
   return `${year}-${padValue(month)}-${padValue(day)} ${padValue(hours)}:${padValue(minutes)}:${padValue(seconds)}`;
 }
 
-// 서버 API를 통한 요청 함수
 async function makeRequest(endpoint: string, data?: any): Promise<any> {
   const url = endpoint.startsWith('/') ? endpoint : `/api/${endpoint}`;
   
@@ -38,7 +35,6 @@ async function makeRequest(endpoint: string, data?: any): Promise<any> {
   return await response.json();
 }
 
-// GET 요청을 위한 함수
 async function makeGetRequest(endpoint: string, params?: any): Promise<any> {
   let url = endpoint.startsWith('/') ? endpoint : `/api/${endpoint}`;
   
@@ -68,7 +64,6 @@ async function makeGetRequest(endpoint: string, params?: any): Promise<any> {
   return await response.json();
 }
 
-// 사용자 인터페이스 정의
 export interface User {
   google_id: string;
   email: string;
@@ -107,7 +102,6 @@ export interface StepRecord {
   created_at?: string;
 }
 
-// 호환성을 위한 인터페이스
 export interface StepData {
   user_name: string;
   team_name: string;
@@ -118,7 +112,6 @@ export interface StepData {
   matched_pattern?: string;
 }
 
-// 사용자 관리 (UPSERT: google_id 기준으로 존재하면 업데이트, 없으면 삽입)
 export const saveUser = async (userData: User): Promise<{ success: boolean; message?: string; data?: any }> => {
   try {
     if (!userData.google_id) {
@@ -202,11 +195,10 @@ export const createTeam = async (teamData: Omit<Team, 'team_code'>): Promise<{ s
       };
     }
 
-    // 2. 생성자를 팀에 자동 가입 (리더 역할)
+    // 생성자를 팀에 자동 가입
     const joinResult = await joinTeam(createdTeam.team_code, teamData.creator_id);
 
     if (!joinResult.success) {
-      // 팀은 생성되었으므로 성공으로 처리하되 메시지에 경고 포함
       return {
         success: true,
         data: createdTeam,
@@ -271,10 +263,8 @@ export const getUserStepsInfo = async (googleId: string): Promise<{
     const result = await makeRequest('database', requestData);
 
     if (result.success) {
-      // 중첩된 구조 처리: result.data.data에 실제 데이터가 있을 수 있음
       let actualData = result.data;
-      
-      // Apps Script에서 중첩된 응답을 보내는 경우 처리
+
       if (actualData && typeof actualData === 'object' && actualData.success && actualData.data) {
         actualData = actualData.data;
       }
@@ -289,8 +279,7 @@ export const getUserStepsInfo = async (googleId: string): Promise<{
           }
         };
       }
-      
-      // actualData가 없지만 성공인 경우 (데이터 없음)
+
       return {
         success: true,
         data: {
@@ -301,10 +290,9 @@ export const getUserStepsInfo = async (googleId: string): Promise<{
       };
     }
 
-    // 실패한 경우
     console.error('getUserStepsInfo 실패:', result.message);
     return {
-      success: true, // UI에서는 성공으로 처리하되 0으로 표시
+      success: true,
       data: {
         todaySteps: 0,
         totalSteps: 0,
@@ -332,8 +320,7 @@ export const getUserTeams = async (googleId: string): Promise<{ success: boolean
 
     if (result.success && result.data) {
       let teams = [];
-      
-      // Apps Script가 중첩된 구조로 응답하는 경우 처리
+
       let actualData = result.data;
       if (actualData && typeof actualData === 'object' && actualData.success && actualData.data) {
         actualData = actualData.data;
@@ -352,7 +339,6 @@ export const getUserTeams = async (googleId: string): Promise<{ success: boolean
         }
       }
       
-      // team_code가 유효한 팀만 필터링
       const validTeams = teams.filter((t: any) => t && t.team_code && t.team_code !== '');
       
       return {
@@ -388,18 +374,16 @@ export const getTeamMembers = async (teamCode: string): Promise<{ success: boole
     const requestData = {
       action: 'get',
       table: 'team_members',
-      team_code: teamCode.trim()  // 직접 파라미터로 전달
+      team_code: teamCode.trim()
     };
 
     const result = await makeRequest('database', requestData);
 
     if (result.success && result.data) {
       let members = [];
-      
-      // Apps Script 응답 데이터 파싱
+
       let actualData = result.data;
-      
-      // 중첩된 구조인 경우 처리
+
       if (actualData && typeof actualData === 'object' && actualData.success && actualData.data) {
         actualData = actualData.data;
       }
@@ -408,18 +392,15 @@ export const getTeamMembers = async (teamCode: string): Promise<{ success: boole
         members = actualData;
       } else if (typeof actualData === 'object') {
         const values = Object.values(actualData);
-        
-        // values[1]이 배열인 경우 (일반적인 Apps Script 응답 패턴)
+
         if (values.length >= 2 && Array.isArray(values[1])) {
           members = values[1];
         } else {
-          // 다른 형태의 배열 찾기
           const arrayValues = values.filter(v => Array.isArray(v));
           members = arrayValues.flat();
         }
       }
       
-      // Google Apps Script에서 이미 필터링되었지만, 안전을 위해 한 번 더 필터링
       const filteredMembers = members.filter((member: any) => 
         member && 
         member.google_id && 
@@ -447,17 +428,14 @@ export const getTeamMembers = async (teamCode: string): Promise<{ success: boole
   }
 };
 
-
-
-// 호환성을 위한 함수들
 export const saveStepRecord = async (stepData: StepData): Promise<{ success: boolean; message?: string; data?: any }> => {
   try {
     // stepData에서 실제 google_id와 team_code 추출
-    const userGoogleId = stepData.user_name; // 실제로는 google_id가 전달됨
-    const teamCode = stepData.team_name; // 실제로는 team_code가 전달됨
+    const userGoogleId = stepData.user_name;
+    const teamCode = stepData.team_name;
 
     const requestData = {
-      action: 'insert', // Apps Script에서 table에 따라 InsertStepRecord 호출
+      action: 'insert',
       table: 'step_records',
       data: {
         user_google_id: userGoogleId,
@@ -497,14 +475,12 @@ export const saveStepRecord = async (stepData: StepData): Promise<{ success: boo
 
 export const getTeamRankings = async (): Promise<{ success: boolean; data?: any[]; message?: string }> => {
   try {
-    // 1. 모든 걸음수 기록 조회
     const stepRecordsResult = await makeRequest('database', {
       action: 'read',
       table: 'step_records',
       data: {}
     });
-    
-    // Apps Script 응답에서 실제 데이터 추출
+
     let stepRecords = [];
     if (stepRecordsResult.success && stepRecordsResult.data) {
       if (Array.isArray(stepRecordsResult.data)) {
@@ -527,12 +503,10 @@ export const getTeamRankings = async (): Promise<{ success: boolean; data?: any[
         ]
       };
     }
-    
-    // 2. 팀별 걸음수 합계 계산
+
     const teamSteps: { [key: string]: number } = {};
     
     stepRecords.forEach((record: any) => {
-      // team_code 또는 team_id 필드를 확인 (둘 다 비어있으면 NO_TEAM)
       const teamCode = record.team_code || record.team_id || record.team_name || 'NO_TEAM';
       const steps = parseInt(record.steps) || 0;
       
@@ -542,15 +516,13 @@ export const getTeamRankings = async (): Promise<{ success: boolean; data?: any[
         teamSteps[teamCode] = steps;
       }
     });
-    
-    // 3. 팀 정보 조회
+
     const teamsResult = await makeRequest('database', {
       action: 'read', 
       table: 'teams',
       data: {}
     });
-    
-    // 팀 데이터 파싱
+
     let teamsData = [];
     if (teamsResult.success && teamsResult.data) {
       if (Array.isArray(teamsResult.data)) {
@@ -564,11 +536,9 @@ export const getTeamRankings = async (): Promise<{ success: boolean; data?: any[
         }
       }
     }
-    
-    // 4. 팀 이름과 걸음수 매핑
+
     const rankings: any[] = [];
-    
-    // 실제 팀 데이터 사용
+
     teamsData.forEach((team: any) => {
       const teamCode = team.team_code;
       const teamName = team.name || teamCode;
@@ -576,16 +546,15 @@ export const getTeamRankings = async (): Promise<{ success: boolean; data?: any[
       
       const teamData = {
         name: teamName,
-        total_steps: totalSteps, // page.tsx에서 사용하는 필드명으로 변경
-        steps: totalSteps, // 기존 호환성을 위해 유지
-        member_count: 0, // 일단 0으로 설정, 나중에 멤버 수 계산 추가 가능
-        rank: 0 // 나중에 설정
+        total_steps: totalSteps,
+        steps: totalSteps,
+        member_count: 0,
+        rank: 0
       };
       
       rankings.push(teamData);
     });
     
-    // NO_TEAM 데이터가 있으면 추가
     if (teamSteps['NO_TEAM'] && teamSteps['NO_TEAM'] > 0) {
       rankings.push({
         name: '개인 참가자',
@@ -606,7 +575,6 @@ export const getTeamRankings = async (): Promise<{ success: boolean; data?: any[
     
   } catch (error) {
     console.error('팀 랭킹 조회 실패:', error);
-    // 에러 시 더미 데이터 반환
     return { 
       success: true, 
       data: [
@@ -619,7 +587,7 @@ export const getTeamRankings = async (): Promise<{ success: boolean; data?: any[
 // 모든 팀 목록 조회 (가입 가능한 팀들)
 export const getAllTeams = async (): Promise<{ success: boolean; data?: (Team & { memberCount: number })[]; message?: string }> => {
   try {
-    // 1. 모든 팀 데이터 조회 (기존 read 액션 사용)
+    // 모든 팀 데이터 조회
     const teamsResult = await makeRequest('database', {
       action: 'read',
       table: 'teams',
@@ -638,8 +606,6 @@ export const getAllTeams = async (): Promise<{ success: boolean; data?: (Team & 
       // 객체인 경우 값들을 배열로 변환
       const values = Object.values(teamsResult.data);
       
-      // Apps Script 응답 구조: {success: true, data: [...]}
-      // Object.values()하면 [true, [...]] 형태가 됨
       if (values.length >= 2 && Array.isArray(values[1])) {
         teamsArray = values[1];
       } else {

@@ -203,7 +203,7 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
           teamRank
         })
       } else {
-        // 멤버 데이터가 없는 경우 0으로 설정
+        // 멤버 데이터가 없는 경우
 
         setTeamStats({
           totalSteps: 0,
@@ -288,10 +288,9 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
     try {
       await navigator.clipboard.writeText(inviteUrl)
       setCopySuccess(true)
-      setTimeout(() => setCopySuccess(false), 2000) // 2초 후 성공 메시지 숨김
+      setTimeout(() => setCopySuccess(false), 2000)
     } catch (error) {
       console.error('URL 복사 실패:', error)
-      // 클립보드 API가 지원되지 않는 경우 fallback
       const textArea = document.createElement('textarea')
       textArea.value = inviteUrl
       document.body.appendChild(textArea)
@@ -331,7 +330,6 @@ export default function TeamManager({ onTeamChange }: TeamManagerProps) {
     if (selectedTeam && memberStepsInfo && Object.keys(memberStepsInfo).length > 0) {
       loadTeamStats()
     } else if (selectedTeam) {
-      // 선택된 팀이 있지만 멤버 정보가 아직 없는 경우 로딩 상태 유지
       setStatsLoading(true)
     }
   }, [selectedTeam, memberStepsInfo, loadTeamStats])

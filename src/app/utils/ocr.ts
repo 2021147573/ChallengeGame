@@ -36,16 +36,12 @@ interface ClovaOcrResult {
 
 export async function extractStepsFromImage(imageFile: File): Promise<StepData | null> {
   try {
-    // 1. 파일을 base64로 변환
     const base64Image = await fileToBase64(imageFile)
     
-    // 2. 클로바 OCR API 호출
     const ocrResult = await callClovaOcrApi(base64Image)
     
-    // 3. OCR 결과에서 텍스트 추출
     const extractedText = extractTextFromClovaResult(ocrResult)
     
-    // 4. 걸음수 패턴 매칭
     const stepsResult = extractStepsFromText(extractedText)
     
     if (stepsResult.steps === 0) {
@@ -125,14 +121,12 @@ function extractStepsFromText(text: string): {
   confidence: number;
   matchedPattern: string;
 } {
-  // 텍스트 정리 및 목표 걸음수 패턴 제거 (예: /6,000 걸음 → 제거)
   let cleanText = text.replace(/\s+/g, ' ').trim()
   
-  // /숫자 걸음 패턴을 제거하여 목표 걸음수 무시
   cleanText = cleanText.replace(/\/\d{1,3}(?:[,，]\d{3})*\s*걸음/gi, '')
   cleanText = cleanText.replace(/\/\d+\s*걸음/gi, '')
 
-  // 걸음수 패턴 (단순하고 안정적인 패턴만 사용)
+  // 걸음수 패턴
   const stepPatterns = [
     { pattern: /(\d{1,3}(?:[,，]\d{3})+)\s*걸음/i, name: '쉼표걸음' },
     { pattern: /(\d+)\s*걸음/i, name: '숫자걸음' }
@@ -144,19 +138,17 @@ function extractStepsFromText(text: string): {
       const cleanNumber = match[1].replace(/[,，]/g, '')
       const steps = parseInt(cleanNumber)
       
-      // 기본 유효성 검사
       if (isNaN(steps) || steps <= 0 || steps > 200000) {
         continue
       }
       
-      // 너무 작은 숫자 제외
       if (steps < 100) {
         continue
       }
       
       return {
         steps: steps,
-        confidence: 95, // 클로바 OCR + 직접 '걸음' 매칭이므로 높은 신뢰도
+        confidence: 95,
         matchedPattern: name
       }
     }

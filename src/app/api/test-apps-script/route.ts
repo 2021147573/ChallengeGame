@@ -6,8 +6,7 @@ export async function GET() {
   console.log('=== Google Apps Script 진단 시작 ===')
   
   const tests = []
-  
-  // 테스트 1: 기본 연결
+
   try {
     const basicUrl = `${APPS_SCRIPT_URL}`
     console.log('기본 연결 테스트:', basicUrl)
@@ -29,7 +28,6 @@ export async function GET() {
     })
   }
   
-  // 테스트 2: test 액션
   try {
     const testUrl = `${APPS_SCRIPT_URL}?action=test`
     console.log('test 액션 테스트:', testUrl)
@@ -51,7 +49,6 @@ export async function GET() {
     })
   }
   
-  // 테스트 3: get 액션 (간단한 조회)
   try {
     const getUrl = `${APPS_SCRIPT_URL}?action=get&table=users`
     console.log('get 액션 테스트:', getUrl)

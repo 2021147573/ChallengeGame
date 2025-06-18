@@ -6,7 +6,7 @@ import { saveUser, getUser, User } from '../lib/database_simple';
 
 
 
-// 더 강력한 한글 복원 함수
+// 한글 복원 함수
 function decodeKoreanFromLatin1(text: string): string {
   try {
     // Latin-1로 잘못 해석된 UTF-8 바이트를 올바른 한글로 복원
@@ -86,23 +86,18 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         // DB 응답에서 실제 사용자 데이터 추출
         let actualUserData = null;
         if (userResult.success && userResult.data) {
-          // 중첩된 구조 처리: userResult.data.data에 실제 데이터가 있을 수 있음
           let rawData: unknown = userResult.data;
-          
-          // Apps Script에서 중첩된 응답을 보내는 경우 처리
+
           if (rawData && typeof rawData === 'object' && 'success' in rawData && 'data' in rawData) {
             rawData = (rawData as { data: unknown }).data;
           }
           
-          // 배열인 경우 첫 번째 요소 사용
           if (Array.isArray(rawData) && rawData.length > 0) {
             actualUserData = rawData[0];
           }
-          // 객체이고 google_id가 있는 경우
           else if (typeof rawData === 'object' && rawData !== null && 'google_id' in rawData) {
             actualUserData = rawData;
           }
-          // 객체의 값들 중에서 google_id가 있는 항목 찾기
           else if (typeof rawData === 'object' && rawData !== null) {
                       const values = Object.values(rawData);
           for (const value of values) {
@@ -112,7 +107,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
             }
           }
             
-            // 여전히 못 찾았으면 배열 형태의 값 확인
             if (!actualUserData) {
               const arrayValues = values.filter(v => Array.isArray(v));
               for (const arr of arrayValues) {
@@ -166,12 +160,10 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       let loginResult: GoogleUser;
       
       try {
-        // 기본 로그인 시도
         loginResult = await googleLogin();
       } catch (error: unknown) {
-        // 취소된 경우는 에러를 다시 던지지 않음
         if (error instanceof Error && (error as any).cancelled) {
-          return; // 함수 종료, 에러 안 던짐
+          return;
         }
         console.error('구글 로그인 실패:', error instanceof Error ? error.message : String(error));
         throw error;
@@ -179,31 +171,25 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
       
       setGoogleUser(loginResult);
       
-      // 로컬 스토리지에 저장
       saveGoogleUserLocally(loginResult);
 
-      // 데이터베이스에서 사용자 조회
       const googleId = loginResult.id;
       
       try {
         const userResult = await getUser(googleId);
 
         if (userResult.success && userResult.data) {
-          // 중첩된 구조 처리
           let rawData: unknown = userResult.data;
           
-          // Apps Script에서 중첩된 응답을 보내는 경우 처리
           if (rawData && typeof rawData === 'object' && 'success' in rawData && 'data' in rawData) {
             rawData = (rawData as { data: unknown }).data;
           }
           
           let actualUserData = null;
           
-          // 배열인 경우 첫 번째 요소 사용
           if (Array.isArray(rawData) && rawData.length > 0) {
             actualUserData = rawData[0];
           }
-          // 객체이고 google_id가 있는 경우
           else if (typeof rawData === 'object' && rawData !== null && 'google_id' in rawData) {
             actualUserData = rawData;
           }
@@ -249,7 +235,6 @@ export const UserProvider: React.FC<UserProviderProps> = ({ children }) => {
         }
       } catch (dbError) {
         console.error('데이터베이스 연동 실패:', dbError);
-        // DB 연동 실패해도 로컬 로그인은 유지
         const fixedLocalName = decodeKoreanFromLatin1(loginResult.name)
         const localUser: User = {
           google_id: googleId,
