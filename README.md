@@ -2,6 +2,13 @@
 
 **배포 주소:** [https://challengegame.vercel.app/](https://challengegame.vercel.app/)
 
+## 개발환경
+
+- **운영체제**: macOS 15.0.1 (Apple Silicon)
+- **Node.js**: v23.11.0
+- **패키지 매니저**: pnpm 10.10.0
+- **권장 Node.js 버전**: 18.0 이상
+
 ## 로컬 실행 방법
 
 1. **Node.js 설치**  
